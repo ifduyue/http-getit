@@ -9,7 +9,7 @@
 
 #define MAXSIZE 2048
 
-static char buf[MAXSIZE];
+static char buf[MAXSIZE+1];
 static char *argv0;
 
 int get_socket( const char *host, unsigned short port );
@@ -50,7 +50,7 @@ int get_socket( const char *hostname, unsigned short port ) {
 void http_get( const char *url, int outfd ) {
    char *i;
    char host[MAXSIZE+1], get[MAXSIZE+1];
-   
+   unsigned short port = 80;
    if ( strncmp( url, "http://", 7 ) == 0 ) {
       url += 7;
    }
@@ -61,12 +61,17 @@ void http_get( const char *url, int outfd ) {
       *i = 0;
       snprintf( get, MAXSIZE, "/%s", i+1 );
    }
+   if ( ( i = strchr( url, ':' ) ) != NULL ) {
+      *i = 0;
+      port = atoi(i+1);
+   }
    strncpy( host, url, MAXSIZE);
    
-   int sockfd = get_socket(host, 80);
+   int sockfd = get_socket(host, port);
    snprintf( buf, MAXSIZE, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", get, host );
    int bytes;
    write( sockfd, buf, strlen(buf) );
+   fprintf( stderr, "host: %s, get: %s, port: %u\n", host, get, port);
    for (;;) {
       if ( read( sockfd, buf, 1 ) <= 0 ) break;
       if ( *buf == '\n' ) {
