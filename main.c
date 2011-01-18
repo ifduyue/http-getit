@@ -13,7 +13,6 @@ static char buf[MAXSIZE+1];
 static char *argv0;
 
 int get_socket( const char *host, unsigned short port );
-void base64_encode(const char *str, char *result);
 void http_get( const char *url, int outfd );
 void usage();
 
@@ -84,28 +83,28 @@ void http_get( const char *url, int outfd ) {
    }
    if ( ( i = strchr( url, ':' ) ) != NULL ) {
       *i = 0;
-      port = atoi(i+1);
+      port = atoi( i+1 );
    }
-   strncpy( host, url, MAXSIZE);
+   strncpy( host, url, MAXSIZE );
    
-   int sockfd = get_socket(host, port);
-   fprintf( stderr, "host: %s, get: %s, port: %u\n", host, get, port);
+   int sockfd = get_socket( host, port );
+   fprintf( stderr, "host: %s, get: %s, port: %u\n", host, get, port );
    if ( *auth ) {
-       snprintf( buf, MAXSIZE, "GET %s HTTP/1.0\r\nHost: %s\r\nAuthorization: Basic %s\r\n\r\n", get, host, auth);
-       fprintf( stderr, "Basic Auth: %s\n", auth);
+       snprintf( buf, MAXSIZE, "GET %s HTTP/1.0\r\nHost: %s\r\nAuthorization: Basic %s\r\n\r\n", get, host, auth );
+       fprintf( stderr, "Basic Auth: %s\n", auth );
    }
    else {
        snprintf( buf, MAXSIZE, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", get, host );
    }
    int bytes;
-   write( sockfd, buf, strlen(buf) );
+   write( sockfd, buf, strlen( buf ) );
    for (;;) {
       if ( read( sockfd, buf, 1 ) <= 0 ) break;
       if ( *buf == '\n' ) {
          if ( bytes == 0 ) break;
          bytes = 0;
       }
-      else if (*buf != '\r') {
+      else if ( *buf != '\r' ) {
          bytes = 1;
       }
    }
