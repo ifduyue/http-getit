@@ -25,8 +25,8 @@ int main( int argc, char **argv ) {
 
 int get_socket( const char *hostname, unsigned short port ) {
    struct hostent *he = NULL;
-   if ( ( he = gethostbyname( hostname ) ) == 0 ) {
-      perror("gethostbyname error");
+   if ( ( he = gethostbyname( hostname ) ) == NULL ) {
+      herror("gethostbyname error");
       exit( 1 );
    }
    
