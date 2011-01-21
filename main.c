@@ -13,13 +13,16 @@ static char buf[MAXSIZE+1];
 static char *argv0;
 
 int get_socket( const char *host, unsigned short port );
-void http_get( const char *url, int outfd );
+int http_get( const char *url, int outfd );
 void usage();
 
 int main( int argc, char **argv ) {
    argv0 = argv[0];
    if ( argc != 2 ) usage();
-   http_get(argv[1], 1);
+   if ( -1 == http_get(argv[1], 1)) {
+       fprintf( stderr, "error downloading: %s\n", argv[1]);
+       exit( 1 );
+   }
    return 0;
 }
 
@@ -27,13 +30,13 @@ int get_socket( const char *hostname, unsigned short port ) {
    struct hostent *he = NULL;
    if ( ( he = gethostbyname( hostname ) ) == NULL ) {
       herror("gethostbyname error");
-      exit( 1 );
+      return -1;
    }
    
    int sockfd = socket( he->h_addrtype, SOCK_STREAM, 0 );
    if ( sockfd < 0 ) {
       perror( "can't get a sockfd" );
-      exit( 1 );
+      return -1;
    }
    
    struct sockaddr_in remote;
@@ -42,12 +45,12 @@ int get_socket( const char *hostname, unsigned short port ) {
    remote.sin_port = htons( port );
    if ( connect( sockfd, (struct sockaddr *) &remote, sizeof( remote ) ) < 0 ) {
       perror( "connect error" );
-      exit( 1 );
+      return -1;
    }
    return sockfd;
 }
 
-void http_get( const char *url, int outfd ) {
+int http_get( const char *url, int outfd ) {
    char *i;
    char host[MAXSIZE], get[MAXSIZE], auth[MAXSIZE];
    *auth = 0;
@@ -88,6 +91,9 @@ void http_get( const char *url, int outfd ) {
    strncpy( host, url, MAXSIZE );
    
    int sockfd = get_socket( host, port );
+   if ( sockfd == -1 ) {
+       return -1;
+   }
    fprintf( stderr, "host: %s, get: %s, port: %u\n", host, get, port );
    if ( *auth ) {
        snprintf( buf, MAXSIZE, "GET %s HTTP/1.0\r\nHost: %s\r\nAuthorization: Basic %s\r\n\r\n", get, host, auth );
@@ -112,6 +118,7 @@ void http_get( const char *url, int outfd ) {
       if ( ( bytes = read( sockfd, buf, MAXSIZE ) ) <= 0 ) break;
       write( outfd, buf, bytes );
    }
+   return 0;
 }
 
 void usage() {
